@@ -7,19 +7,10 @@
 
 
     .data
-#Mensajes para pedir datos
-mensajeArrulloInicio: .asciiz "Ingrese la hora de inicio del arrullo: "
-mensajeArrulloFinal: .asciiz "Ingrese la hora final del arrullo: "
-
-mensajeMimirInicio: .asciiz "Ingrese la hora de inicio de la mimicion: "
-mensajeMimirFinal: .asciiz "Ingrese la hora final de la dormicion: "
-
-mensajeDiversionInicio: .asciiz "Ingrese la hora de inicio de la diversion: "
-mensajeDiversionFinal: .asciiz "Ingrese la hora final de la diversion: "
-
-mensajePedirHora: .asciiz "Hora: "
-mensajeRepetir: .asciiz "¿Desea repetir? [1]=Si" 
-
+horasConfig: .word 1, 8, 9, 11, 12, 16, 19, 23
+horasCheck: .word 2, 2, 3
+llantoFuerte: .word 1, 1, 1
+llantoLeve: .word 1, 1, 1
 #Mensajes -requerimientos
 mensajeLlantoFuerte: .asciiz "bbdp"
 mensajeAcomodarbb: .asciiz "FAdo"
@@ -27,102 +18,72 @@ mensajeMusica: .asciiz "FALA"
 mensajeMuneco: .asciiz "PLAy"
 mensajeMusicaArrullo: .asciiz "SOLd"
 
-
-#Las horas quedan guardadas de t0 a t5
-
-
     .text
 main:
-    #----------------------------------------------Pedir datos arrullo
-	li $v0, 4 #Para imprimir en pantalla
-	la $a0, mensajeArrulloInicio #la = laod address
-	syscall
-	li $v0, 5
-	syscall
-	add $t0, $0, $v0 #Guardamos hora de inicio de arrullo en t0
+    #----------------------------------------------Se cargan datos (horas)
+	la $t0, horasConfig
 
-	li $v0, 4 #Para imprimir en pantalla
-	la $a0, mensajeArrulloFinal #la = laod address
-	syscall
-	li $v0, 5
-	syscall
-	add $t1, $0, $v0 #Guardamos hora de final de arullo en t1
-    #----------------------------------------------Pedir datos dormizion
-	li $v0, 4 #Para imprimir en pantalla
-	la $a0, mensajeMimirInicio #la = laod address
-	syscall
-	li $v0, 5
-	syscall
-	add $t2, $0, $v0 #Guardamos hora de inicio de dormir en t2
+	#mimir
+	lw $s0, 0($t0)
+	lw $s1, 4($t0)
 
-    li $v0, 4 #Para imprimir en pantalla
-	la $a0, mensajeMimirFinal #la = laod address
-	syscall
-	li $v0, 5
-	syscall
-	add $t3, $0, $v0 #Guardamos hora de final de dormir en t3
-    #----------------------------------------------Pedir datos diversion
-	li $v0, 4 #Para imprimir en pantalla
-	la $a0, mensajeDiversionInicio #la = laod address
-	syscall
-	li $v0, 5
-	syscall
-	add $t4, $0, $v0 #Guardamos hora de inicio de diversion en t4
+	#diversion
+	lw $s2, 8($t0)
+	lw $s3, 12($t0)
 
-	li $v0, 4 #Para imprimir en pantalla
-	la $a0, mensajeDiversionFinal #la = laod address
-	syscall
-	li $v0, 5
-	syscall
-	add $t5, $0, $v0 #Guardamos hora de final de diversion en t5
+	lw $s4, 16($t0)
+	lw $s5, 20($t0)
 
-    #Imprimir informacion ingresa
-    #li $a0, 0
-    #add $a0, $a0, $t0
-    #li $v0, 1
-    #syscall
+	#arrullo
+	lw $s6, 24($t0)
+	lw $s7, 28($t0)
 
-    li $s0, 1
+#-------------------
+	addi $t1, $0, 3 # <----- Cantidad de veces que se va a repetir
+	addi $t2, $0, 0 # Contador
 
+	la $t0, horasCheck
+	la $t4, llantoFuerte
+	la $t5, llantoLeve
 repetir:
-    #Logica para repetir y pedir hora
-    li $v0, 4 #Para imprimir en pantalla
-    la $a0, mensajePedirHora
-    syscall
-    li $v0, 5
-    syscall
-    add $t6, $0, $v0 #Guardamos la hora en t6
 
-    #Hora arrullo
-    ble $t0, $t6, salirArrullo
-    bge $t1, $t6, salirArrullo
-    #Aqui se hace la logica de arrullo
-salirArrullo: 
-    
-    #Hora de mimir
-    ble $t2, $t6, salirMimir
-    bge $t3, $t6, salirMimir
-    #Aqui se hace la logica de mimir
+	lw $t3, ($t0) # Que hora es
+	
+
+	#mimir
+	ble $t3, $s0, salirMimir
+	bge $t3, $s1, salirMimir
+
+	lw $t8, ($t4) #Se carga el arreglo de llanto fuerte
+	beq $t8, $0, salirLlantoFuerte
+	addi $t7, $0, 777 #Para saber si llora fuerte (Se cambiaria por el mensaje)
+salirLlantoFuerte:
+	lw $t8, ($t5) #Se carga el arreglo de llanto leve
+	beq $t8, $0, salirMimir
+	add $t7, $0, 777 #Para saber si llora leve (Se cambiaria por el led)
 salirMimir:
 
-    #Hora de diversion
-    ble $t4, $t6, salirDiversion
-    bge $t5, $t6, salirDiversion
-    #Aqui se hace la logica de diversion
+	#diversion
+	ble $t3, $s2, salirDiversion
+	bge $t3, $s3, salirDiversion
+
 salirDiversion:
 
-    #Preguntamos si desean repetir
-    li $v0, 4 #Para imprimir en pantalla
-	la $a0, mensajeRepetir #la = laod address
-	syscall
-	li $v0, 5
-	syscall
-	add $a1, $0, $v0 #Guardamos en a1 el valor de repetir
+	#arrullo
+	ble $t3, $s4, salirArrullo
+	bge $t3, $s5, salirArrullo
+	ble $t3, $s6, salirArrullo
+	bge $t3, $s7, salirArrullo
 
-    beq $a1, $s0, repetir
+salirArrullo:
+	
 
+	addi $t4, $t4, 4 #Aumenta en 4 la direccion de llantoFuerte
+	addi $t5, $t5, 4 #Aumenta en 4 la direccion de llantoLeve
 
-
+	addi $t0, $t0, 4 #Aumenta en 4 la direccion de horasCheck
+	addi $t2, $t2, 1 # Aumento el contador
+	bne $t2, $t1, repetir
 exit:
 	li $v0, 10 #system call code for exit
 	syscall
